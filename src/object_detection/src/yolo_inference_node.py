@@ -22,7 +22,7 @@ class Display:
     def image_callback(self, img_msg: Image):
         self.img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
 
-    def timer_cb(self, image: Image):
+    def timer_cb(self):
         results = self.model(self.img)
         cv2.imshow('Stream', cv2.cvtColor(np.squeeze(results.render()), cv2.COLOR_RGB2BGR))
         cv2.waitKey(1)
