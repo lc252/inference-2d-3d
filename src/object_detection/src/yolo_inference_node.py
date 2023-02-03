@@ -13,11 +13,8 @@ class Display:
     
     def callback(self, image: Image):
         im_arr = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.width, -1)
-        cv2.imshow('Stream', im_arr)
-
-        if cv2.waitKey(10) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            quit()
+        cv2.imshow('Stream', cv2.cvtColor(im_arr, cv2.COLOR_RGB2BGR))
+        cv2.waitKey(1)
 
 
 if __name__ == '__main__':
