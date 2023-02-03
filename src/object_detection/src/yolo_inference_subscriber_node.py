@@ -7,14 +7,19 @@ import cv2
 from sensor_msgs.msg import Image
 
 
+
 class Display:
     def __init__(self):
+        self.model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5n.pt")
         self.sub = rospy.Subscriber('camera/color/image_raw', Image, self.callback)
+
     
     def callback(self, image: Image):
         im_arr = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.width, -1)
-        cv2.imshow('Stream', cv2.cvtColor(im_arr, cv2.COLOR_RGB2BGR))
+        results = self.model(im_arr)
+        cv2.imshow('Stream', cv2.cvtColor(np.squeeze(results.render()), cv2.COLOR_RGB2BGR))
         cv2.waitKey(1)
+
 
 
 if __name__ == '__main__':
