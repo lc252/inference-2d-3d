@@ -56,3 +56,6 @@ CATKIN_IGNORE
 .vs/
 .vscode/*
 .vs/*
+
+# torch
+*.pt
