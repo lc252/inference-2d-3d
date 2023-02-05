@@ -33,13 +33,14 @@ class Detector:
         if len(results.xyxy[0]) == 0:
             return
         for result in results.xyxy:
+            result = result[0]      # tensor containing [xmin, ymin, xmax, ymax, confidence, class]
             det = Detection()
             det.class_id = int(result[5])
             det.confidence = result[4]
-            det.roi.x_offset = int(result[0])    # xmin
-            det.roi.y_offset = int(result[2])    # ymin
-            det.roi.height = int(result[3] - result[2])  # ymax - ymin
-            det.roi.width = int(result[1] - result[0])   # xmax - xmin
+            det.roi.x_offset = int(result[0])
+            det.roi.y_offset = int(result[1])
+            det.roi.height = int(result[3] - result[1])  # ymax - ymin
+            det.roi.width = int(result[2] - result[0])   # xmax - xmin
             det.roi.do_rectify = False
             det_arr.objects.append(det)
         
