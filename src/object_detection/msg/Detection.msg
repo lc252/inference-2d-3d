@@ -1,5 +1,5 @@
-# The name of the deteted class
-string class
+# The detected class
+int8 class_id
 
 # The region of interest within the image
 sensor_msgs/RegionOfInterest roi
