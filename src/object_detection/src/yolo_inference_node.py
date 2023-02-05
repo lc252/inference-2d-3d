@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import cv2
 from sensor_msgs.msg import Image, RegionOfInterest
-from object_detection.msg import Detection
+from object_detection.msg import Detection, DetectionsArray
 
 
 
@@ -15,28 +15,36 @@ class Detector:
         self.model = torch.hub.load("ultralytics/yolov5", "custom", "yolov5n.pt")
         # image subscriber
         self.sub = rospy.Subscriber('camera/color/image_raw', Image, self.new_image_cb)
-        self.img = np.zeros(shape=(640,480,3))
+        self.img = np.zeros(shape=(480,640,3))
         # timer callback to perform inference. on a separate thread for efficiency
         self.timer = rospy.timer.Timer(rospy.Duration(1/30), self.inference_cb)
         # results publisher
-        self.pub = rospy.Publisher('inference_results', )
+        self.pub = rospy.Publisher('inference_results', DetectionsArray, queue_size=1)
         self.render = render
 
     def new_image_cb(self, img_msg: Image):
         self.img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
 
-    def inference_cb(self):
+    def inference_cb(self, _):
         # do detection
         results = self.model(self.img)
+        det_arr = DetectionsArray()
         # publish result ROIs
+        if len(results.xyxy[0]) == 0:
+            return
         for result in results.xyxy:
-            roi = RegionOfInterest()
-            roi.x_offset = result[0]    # xmin
-            roi.y_offset = result[2]    # ymin
-            roi.height = result[3] - result[2]  # ymax - ymin
-            roi.width = result[1] - result[0]   # xmax - xmin
-            roi.do_rectify = False
-            self.pub.publish(roi)
+            det = Detection()
+            det.class_id = int(result[5])
+            det.confidence = result[4]
+            det.roi.x_offset = int(result[0])    # xmin
+            det.roi.y_offset = int(result[2])    # ymin
+            det.roi.height = int(result[3] - result[2])  # ymax - ymin
+            det.roi.width = int(result[1] - result[0])   # xmax - xmin
+            det.roi.do_rectify = False
+            det_arr.objects.append(det)
+        
+        self.pub.publish(det_arr)
+            
         # render result in cv     
         if self.render:
             self.render_cb(results)
@@ -49,5 +57,5 @@ class Detector:
 
 if __name__ == '__main__':
     rospy.init_node('yolo_inference_node', anonymous=True)
-    display = Detector(render=True)
+    display = Detector(render=False)
     rospy.spin()
