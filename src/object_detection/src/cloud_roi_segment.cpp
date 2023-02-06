@@ -43,7 +43,7 @@ void roi_segment_cb(object_detection::DetectionsArray det_arr)
     // publish output ros msg
     sensor_msgs::PointCloud2 ros_cloud;
     pcl::toROSMsg(*output_cloud, ros_cloud);
-    ros_cloud.header.frame_id = "camera_depth_optical_frame";
+    ros_cloud.header.frame_id = "camera_color_optical_frame";
     pub.publish(ros_cloud);
 }
 
