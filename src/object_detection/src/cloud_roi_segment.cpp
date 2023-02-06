@@ -17,8 +17,10 @@ void cloud_cb(sensor_msgs::PointCloud2 input)
 
 void roi_segment_cb(object_detection::DetectionsArray det_arr)
 {
-    std::cout << organised_cloud->height << " " << organised_cloud->width << std::endl;
-    // iterate to find the most confident detection
+    // create the empty output cloud
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    // iterate to find the detection with the greatest confidence
     object_detection::Detection best_det;
     best_det.confidence = 0;
     for (object_detection::Detection det : det_arr.objects)
@@ -29,22 +31,24 @@ void roi_segment_cb(object_detection::DetectionsArray det_arr)
         }
     }
 
-    organised_cloud += organised_cloud;
-
+    // iterate the points in the region of interest and add them to the output cloud
     for (int i=best_det.roi.y_offset; i<(best_det.roi.y_offset+best_det.roi.height); i++)
     {
         for (int j=best_det.roi.x_offset; j<(best_det.roi.x_offset+best_det.roi.width); j++)
         {
-            std::cout << organised_cloud->at(j, i).x << " ";
+            output_cloud->push_back(organised_cloud->at(j,i));
         }
-        std::cout << std::endl;
     }
-    std::cout << best_det.class_id << std::endl;
+
+    // publish output ros msg
+    sensor_msgs::PointCloud2 ros_cloud;
+    pcl::toROSMsg(*output_cloud, ros_cloud);
+    ros_cloud.header.frame_id = "camera_depth_optical_frame";
+    pub.publish(ros_cloud);
 }
 
 int main(int argc, char* argv[])
 {
-    std::cout << "hi";
     ros::init(argc, argv, "cloud_roi_segment_node");
     ros::NodeHandle nh;
     
