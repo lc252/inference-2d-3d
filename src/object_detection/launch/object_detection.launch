@@ -2,7 +2,7 @@
 
     <include file="$(find object_detection)/launch/organised_pc.launch"/>
     <node pkg="object_detection" type="cloud_roi_segment" name="roi_segmenter_node" output="screen"/>
-    <node pkg="object_detection" type="yolo_inference_node" name="yolo_inference_node" output="screen"/>
+    <node pkg="object_detection" type="yolo_inference_node.py" name="yolo_inference_node" output="screen"/>
     <node pkg="rviz" type="rviz" name="rviz" output="screen"/>
 
 </launch>
