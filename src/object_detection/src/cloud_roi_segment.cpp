@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     ros::Subscriber cloud_sub = nh.subscribe("camera/depth_registered/points", 1, cloud_cb);
     ros::Subscriber det_sub = nh.subscribe("inference_results", 1, roi_segment_cb);
 
-    pub = nh.advertise<sensor_msgs::PointCloud2>("topuc", 1);
+    pub = nh.advertise<sensor_msgs::PointCloud2>("segmented_cloud", 1);
 
     ros::spin();
 }
