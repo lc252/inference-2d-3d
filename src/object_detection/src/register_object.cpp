@@ -133,7 +133,7 @@ int main(int argc, char** argv)
     object_aligned_pub = nh.advertise<sensor_msgs::PointCloud2>("object_aligned", 1);
 
     // setup sub
-    ros::Subscriber sub = nh.subscribe("inference_results", 1, register_object_cb);
+    ros::Subscriber sub = nh.subscribe("detected_cloud", 1, register_object_cb);
     
     ros::spin();
 
