@@ -1,7 +1,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <object_detection/DetectionsArray.h>
+#include <object_detection/Detection2DArray.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -15,15 +15,15 @@ void cloud_cb(sensor_msgs::PointCloud2 input)
     pcl::fromROSMsg(input, *organised_cloud);
 }
 
-void roi_segment_cb(object_detection::DetectionsArray det_arr)
+void roi_segment_cb(object_detection::Detection2DArray det_arr)
 {
     // create the empty output cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
     // iterate to find the detection with the greatest confidence
-    object_detection::Detection best_det;
+    object_detection::Detection2D best_det;
     best_det.confidence = 0;
-    for (object_detection::Detection det : det_arr.objects)
+    for (object_detection::Detection2D det : det_arr.objects)
     {
         if (det.confidence > best_det.confidence)
         {
