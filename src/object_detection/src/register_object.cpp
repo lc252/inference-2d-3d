@@ -44,7 +44,7 @@ void register_object_cb(object_detection::Detection3D detection)
 
     // Load object and scene
     pcl::fromROSMsg(detection.cloud, *object);
-    pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse.obj", *scene);
+    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse.obj", *scene);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
