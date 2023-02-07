@@ -115,6 +115,7 @@ void register_object_cb(object_detection::Detection3D detection)
     pcl::toROSMsg(*scene, ros_scene);
     ros_scene.header.frame_id = "map";
     pcl::toROSMsg(*object_aligned, ros_object_aligned);
+    ros_object_aligned.header.frame_id = "map";
     // Publish clouds
     object_pub.publish(ros_object);
     scene_pub.publish(ros_scene);
