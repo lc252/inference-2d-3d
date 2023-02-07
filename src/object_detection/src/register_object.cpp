@@ -6,6 +6,8 @@
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/fpfh_omp.h>
 #include <pcl/filters/filter.h>
+#include <pcl/filters/filter_indices.h>
+#include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/obj_io.h>
@@ -42,9 +44,18 @@ void register_object_cb(object_detection::Detection3D detection)
     FeatureCloudT::Ptr object_features(new FeatureCloudT);
     FeatureCloudT::Ptr scene_features(new FeatureCloudT);
 
-    // Load object and scene
-    pcl::fromROSMsg(detection.cloud, *object);
-    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *scene);
+    // load scene
+    pcl::fromROSMsg(detection.cloud, *scene);
+    // // remove NANs from scene
+    // boost::shared_ptr<std::vector<int>> indices(new std::vector<int>);
+    // pcl::removeNaNFromPointCloud(*scene, *indices);
+    // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    // extract.setInputCloud(scene);
+    // extract.setIndices(indices);
+    // extract.setNegative(true);
+    // extract.filter(*scene);
+    // load object
+    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
@@ -52,14 +63,22 @@ void register_object_cb(object_detection::Detection3D detection)
     grid.setLeafSize(leaf, leaf, leaf);
     grid.setInputCloud(object);
     grid.filter(*object);
-    grid.setInputCloud(scene);
-    grid.filter(*scene);
+    // too much detail lost in filtering
+    // grid.setLeafSize(leaf, leaf, leaf);
+    // grid.setInputCloud(scene);
+    // grid.filter(*scene);
+
+    sensor_msgs::PointCloud2 ros_scene;
+    pcl::toROSMsg(*scene, ros_scene);
+    ros_scene.header.frame_id = "map";
+    scene_pub.publish(ros_scene);
 
     // Estimate normals for object and scene
     pcl::NormalEstimationOMP<PointNT, PointNT> nest;
     nest.setRadiusSearch(0.01);
     nest.setInputCloud(object);
     nest.compute(*object);
+    nest.setRadiusSearch(0.01);
     nest.setInputCloud(scene);
     nest.compute(*scene);
 
@@ -108,18 +127,18 @@ void register_object_cb(object_detection::Detection3D detection)
     static tf::TransformBroadcaster br;
     br.sendTransform(object_alignment_tf);
 
-    // Create ros msg clouds
-    sensor_msgs::PointCloud2 ros_object, ros_scene, ros_object_aligned;
-    pcl::toROSMsg(*object, ros_object);
-    ros_object.header.frame_id = "map";
-    pcl::toROSMsg(*scene, ros_scene);
-    ros_scene.header.frame_id = "map";
-    pcl::toROSMsg(*object_aligned, ros_object_aligned);
-    ros_object_aligned.header.frame_id = "map";
-    // Publish clouds
-    object_pub.publish(ros_object);
-    scene_pub.publish(ros_scene);
-    object_aligned_pub.publish(ros_object_aligned);
+    // // Create ros msg clouds
+    // sensor_msgs::PointCloud2 ros_object, ros_scene, ros_object_aligned;
+    // pcl::toROSMsg(*object, ros_object);
+    // ros_object.header.frame_id = "map";
+    // pcl::toROSMsg(*scene, ros_scene);
+    // ros_scene.header.frame_id = "map";
+    // pcl::toROSMsg(*object_aligned, ros_object_aligned);
+    // ros_object_aligned.header.frame_id = "map";
+    // // Publish clouds
+    // object_pub.publish(ros_object);
+    // scene_pub.publish(ros_scene);
+    // object_aligned_pub.publish(ros_object_aligned);
 }
 
 
