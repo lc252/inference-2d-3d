@@ -79,7 +79,7 @@ Visualization Manager:
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: Aligned Cloud
+      Name: Stream
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -147,7 +147,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.4139517545700073
+      Distance: 0.26353272795677185
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -163,9 +163,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.34039831161499023
+      Pitch: 0.24539831280708313
       Target Frame: <Fixed Frame>
-      Yaw: 3.4253973960876465
+      Yaw: 3.3053951263427734
     Saved: ~
 Window Geometry:
   Displays:
@@ -185,5 +185,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 89
-  Y: 27
+  X: 213
+  Y: 76
