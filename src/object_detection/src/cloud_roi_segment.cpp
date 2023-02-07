@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <object_detection/Detection2DArray.h>
+#include <object_detection/Detection3D.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -40,11 +41,16 @@ void roi_segment_cb(object_detection::Detection2DArray det_arr)
         }
     }
 
-    // publish output ros msg
+    // create ros msg from cloud
     sensor_msgs::PointCloud2 ros_cloud;
     pcl::toROSMsg(*output_cloud, ros_cloud);
     ros_cloud.header.frame_id = "camera_color_optical_frame";
-    pub.publish(ros_cloud);
+
+    object_detection::Detection3D object;
+    object.cloud = ros_cloud;
+    object.detection2d = best_det;
+
+    pub.publish(object);
 }
 
 int main(int argc, char* argv[])
@@ -55,7 +61,7 @@ int main(int argc, char* argv[])
     ros::Subscriber cloud_sub = nh.subscribe("camera/depth_registered/points", 1, cloud_cb);
     ros::Subscriber det_sub = nh.subscribe("inference_results", 1, roi_segment_cb);
 
-    pub = nh.advertise<sensor_msgs::PointCloud2>("segmented_cloud", 1);
+    pub = nh.advertise<object_detection::Detection3D>("segmented_cloud", 1);
 
     ros::spin();
 }
