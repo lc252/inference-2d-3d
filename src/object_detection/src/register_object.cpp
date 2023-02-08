@@ -46,15 +46,7 @@ void register_object_cb(object_detection::Detection3D detection)
 
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
-    // // remove NANs from scene
-    // boost::shared_ptr<std::vector<int>> indices(new std::vector<int>);
-    // pcl::removeNaNFromPointCloud(*scene, *indices);
-    // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-    // extract.setInputCloud(scene);
-    // extract.setIndices(indices);
-    // extract.setNegative(true);
-    // extract.filter(*scene);
-    // load object
+
     pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
 
     // Downsample

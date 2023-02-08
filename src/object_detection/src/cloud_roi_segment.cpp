@@ -38,7 +38,11 @@ void roi_segment_cb(object_detection::Detection2DArray det_arr)
     {
         for (int j=best_det.roi.x_offset; j<(best_det.roi.x_offset+best_det.roi.width); j++)
         {
-            output_cloud->push_back(organised_cloud->at(j,i));
+            // add point only if point is NOT nan
+            if(!std::isnan(organised_cloud->at(j,i).x))
+            {
+                output_cloud->push_back(organised_cloud->at(j,i));
+            }
         }
     }
 
