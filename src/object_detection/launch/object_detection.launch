@@ -2,7 +2,9 @@
 
     <node pkg="object_detection" type="cloud_roi_segment" name="roi_segmenter_node" output="screen"/>
     <node pkg="object_detection" type="yolo_inference_node.py" name="yolo_inference_node" output="screen"/>
+    <node pkg="object_detection" type="register_object" name="registration_node" output="screen"/>
     <include file="$(find object_detection)/launch/organised_pc.launch"/>
     <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find object_detection)/rviz/settings.rviz" required="true"/>
+    <node pkg="tf" type="static_transform_publisher" name="maptocam" args="0 0 0 0 0 0 map camera_link 1"/>
 
 </launch>
