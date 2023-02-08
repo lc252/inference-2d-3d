@@ -14,6 +14,9 @@
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -29,8 +32,6 @@ typedef pcl::FPFHEstimationOMP<PointNT, PointNT, FeatureT> FeatureEstimationT;
 typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 
 // Publishers
-ros::Publisher object_pub;
-ros::Publisher scene_pub;
 ros::Publisher object_aligned_pub;
 
 
@@ -46,24 +47,41 @@ void register_object_cb(object_detection::Detection3D detection)
 
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
-
+    // load object
     pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
-    const float leaf = 0.005f;
-    grid.setLeafSize(leaf, leaf, leaf);
+    grid.setLeafSize(0.005, 0.005, 0.005);
     grid.setInputCloud(object);
     grid.filter(*object);
-    // too much detail lost in filtering
-    // grid.setLeafSize(leaf, leaf, leaf);
-    // grid.setInputCloud(scene);
-    // grid.filter(*scene);
+    grid.setLeafSize(0.002, 0.002, 0.002);
+    grid.setInputCloud(scene);
+    grid.filter(*scene);
 
-    sensor_msgs::PointCloud2 ros_scene;
-    pcl::toROSMsg(*scene, ros_scene);
-    ros_scene.header.frame_id = "map";
-    scene_pub.publish(ros_scene);
+    // Segment and remove largest plane
+    pcl::SACSegmentation<PointNT> seg;
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
+    seg.setOptimizeCoefficients(false);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(100);
+    seg.setDistanceThreshold(0.0025);   // tested previously
+    seg.setInputCloud(scene);
+    seg.segment(*inliers, *coeffs);
+    if (inliers->indices.size() != 0)
+    {
+        pcl::ExtractIndices<PointNT> extractor;
+        extractor.setInputCloud(scene);
+        extractor.setIndices(inliers);
+        extractor.setNegative(true);        // keep NON planar
+        extractor.filter(*scene);
+    }
+    else
+    {
+        ROS_WARN("No plane found, no segmentation...");
+    }
 
     // Estimate normals for object and scene
     pcl::NormalEstimationOMP<PointNT, PointNT> nest;
@@ -90,13 +108,19 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(50000);               // Number of RANSAC iterations
-    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose
-    align.setCorrespondenceRandomness(5);            // Number of nearest features to use
-    align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold
-    align.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
-    align.setInlierFraction(0.25f);                  // Required inlier fraction for accepting a pose hypothesis
+    align.setMaximumIterations(75000);               // Number of RANSAC iterations (50000)
+    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose (3)
+    align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
+    align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold (0.9)
+    align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf object)
+    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
     align.align(*object_aligned);
+
+    if (!align.hasConverged())
+    {
+        ROS_WARN("Could not accurately register the model...");
+        return;
+    }
 
     // get the transform Eigen
     Eigen::Matrix4f transformation = align.getFinalTransformation();
@@ -119,18 +143,12 @@ void register_object_cb(object_detection::Detection3D detection)
     static tf::TransformBroadcaster br;
     br.sendTransform(object_alignment_tf);
 
-    // // Create ros msg clouds
-    // sensor_msgs::PointCloud2 ros_object, ros_scene, ros_object_aligned;
-    // pcl::toROSMsg(*object, ros_object);
-    // ros_object.header.frame_id = "map";
-    // pcl::toROSMsg(*scene, ros_scene);
-    // ros_scene.header.frame_id = "map";
-    // pcl::toROSMsg(*object_aligned, ros_object_aligned);
-    // ros_object_aligned.header.frame_id = "map";
-    // // Publish clouds
-    // object_pub.publish(ros_object);
-    // scene_pub.publish(ros_scene);
-    // object_aligned_pub.publish(ros_object_aligned);
+    // Create ros msg clouds
+    sensor_msgs::PointCloud2 ros_object_aligned;
+    pcl::toROSMsg(*object_aligned, ros_object_aligned);
+    ros_object_aligned.header.frame_id = "camera_color_optical_frame";
+    // Publish clouds
+    object_aligned_pub.publish(ros_object_aligned);
 }
 
 
@@ -140,8 +158,6 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
 
     // setup pubs
-    object_pub = nh.advertise<sensor_msgs::PointCloud2>("object", 1);
-    scene_pub = nh.advertise<sensor_msgs::PointCloud2>("scene", 1);
     object_aligned_pub = nh.advertise<sensor_msgs::PointCloud2>("object_aligned", 1);
 
     // setup sub
