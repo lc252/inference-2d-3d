@@ -1,6 +1,6 @@
 # for files that are formatted in mm not m
 
-filename = "hp_mouse"
+filename = "model_car_scaled"
 
 with open(f"/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/{filename}.obj", "r") as f:
     data = f.read().split('\n')
