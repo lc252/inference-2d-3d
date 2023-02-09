@@ -48,14 +48,14 @@ void register_object_cb(object_detection::Detection3D detection)
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
     // load object
-    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
+    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/model_car_scaled_scaled.obj", *object);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
-    grid.setLeafSize(0.005, 0.005, 0.005);
+    grid.setLeafSize(0.002, 0.002, 0.002);
     grid.setInputCloud(object);
     grid.filter(*object);
-    grid.setLeafSize(0.002, 0.002, 0.002);
+    grid.setLeafSize(0.001, 0.001, 0.001);
     grid.setInputCloud(scene);
     grid.filter(*scene);
 
@@ -70,7 +70,7 @@ void register_object_cb(object_detection::Detection3D detection)
     seg.setDistanceThreshold(0.0025);   // tested previously
     seg.setInputCloud(scene);
     seg.segment(*inliers, *coeffs);
-    if (inliers->indices.size() != 0)
+    if (inliers->indices.size() != 0)  // hardcoded not to do
     {
         pcl::ExtractIndices<PointNT> extractor;
         extractor.setInputCloud(scene);
@@ -84,6 +84,7 @@ void register_object_cb(object_detection::Detection3D detection)
     }
 
     // Estimate normals for object and scene
+    ROS_INFO("Normals");
     pcl::NormalEstimationOMP<PointNT, PointNT> nest;
     nest.setRadiusSearch(0.01);
     nest.setInputCloud(object);
@@ -93,8 +94,9 @@ void register_object_cb(object_detection::Detection3D detection)
     nest.compute(*scene);
 
     // Estimate features
+    ROS_INFO("Features");
     FeatureEstimationT fest;
-    fest.setRadiusSearch(0.025);
+    fest.setRadiusSearch(0.01);
     fest.setInputCloud(object);
     fest.setInputNormals(object);
     fest.compute(*object_features);
@@ -108,19 +110,19 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(75000);               // Number of RANSAC iterations (50000)
+    align.setMaximumIterations(250000);               // Number of RANSAC iterations (50000)
     align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose (3)
-    align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
+    align.setCorrespondenceRandomness(10);            // Number of nearest features to use (5)
     align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold (0.9)
-    align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf object)
-    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
-    align.align(*object_aligned);
-
-    if (!align.hasConverged())
+    align.setMaxCorrespondenceDistance(2.5f * 0.005);       // Inlier threshold, must be within 5mm
+    align.setInlierFraction(0.25f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
+    
+    while (!align.hasConverged())
     {
-        ROS_WARN("Could not accurately register the model...");
-        return;
+        ROS_WARN("Attempting Alignment...");
+        align.align(*object_aligned);
     }
+    ROS_INFO("Aligned");
 
     // get the transform Eigen
     Eigen::Matrix4f transformation = align.getFinalTransformation();
