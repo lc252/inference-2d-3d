@@ -144,6 +144,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(cloud_roi_segment src/cloud_roi_segment.cpp)
 add_executable(register_object src/register_object.cpp)
+add_executable(preprocess_model src/preprocess_model.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,6 +159,7 @@ add_executable(register_object src/register_object.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(cloud_roi_segment ${catkin_LIBRARIES})
 target_link_libraries(register_object ${catkin_LIBRARIES})
+target_link_libraries(preprocess_model ${catkin_LIBRARIES})
 
 #############
 ## Install ##
