@@ -45,14 +45,16 @@ void register_object_cb(object_detection::Detection3D detection)
     FeatureCloudT::Ptr object_features(new FeatureCloudT);
     FeatureCloudT::Ptr scene_features(new FeatureCloudT);
 
+    ROS_INFO("Loading Clouds");
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
     // load object
-    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
+    //pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
+    pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
-    grid.setLeafSize(0.005, 0.005, 0.005);
+    grid.setLeafSize(0.002, 0.002, 0.002);
     grid.setInputCloud(object);
     grid.filter(*object);
     grid.setLeafSize(0.002, 0.002, 0.002);
@@ -60,6 +62,7 @@ void register_object_cb(object_detection::Detection3D detection)
     grid.filter(*scene);
 
     // Segment and remove largest plane
+    ROS_INFO("Segmenting");
     pcl::SACSegmentation<PointNT> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
@@ -84,25 +87,28 @@ void register_object_cb(object_detection::Detection3D detection)
     }
 
     // Estimate normals for object and scene
+    ROS_INFO("Estimating Normals");
     pcl::NormalEstimationOMP<PointNT, PointNT> nest;
     nest.setRadiusSearch(0.01);
-    nest.setInputCloud(object);
-    nest.compute(*object);
-    nest.setRadiusSearch(0.01);
+    // nest.setInputCloud(object);
+    // nest.compute(*object);
     nest.setInputCloud(scene);
     nest.compute(*scene);
 
     // Estimate features
+    ROS_INFO("Estimating Features Object");
     FeatureEstimationT fest;
     fest.setRadiusSearch(0.025);
     fest.setInputCloud(object);
     fest.setInputNormals(object);
     fest.compute(*object_features);
+    ROS_INFO("Estimating Features Scene");
     fest.setInputCloud(scene);
     fest.setInputNormals(scene);
     fest.compute(*scene_features);
 
     // Perform alignment
+    ROS_INFO("Aligning");
     pcl::SampleConsensusPrerejective<PointNT, PointNT, FeatureT> align;
     align.setInputSource(object);
     align.setSourceFeatures(object_features);
@@ -112,19 +118,21 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose (3)
     align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
     align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold (0.9)
-    align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf object)
-    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
-    align.align(*object_aligned);
+    align.setMaxCorrespondenceDistance(2.5f * 0.002); // Inlier threshold (2.5 * leaf size)
+    // align.setInlierFraction(0.01f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
 
-    if (!align.hasConverged())
+    while (true)
     {
-        ROS_WARN("Could not accurately register the model...");
-        return;
+        align.align(*object_aligned);
+        if (!align.hasConverged())
+        {
+            ROS_WARN("Could not accurately register the model...");
+        }
     }
 
     // get the transform Eigen
     Eigen::Matrix4f transformation = align.getFinalTransformation();
-    transformation = transformation.inverse();  // reverse from object->scene to scene->object 
+    transformation = transformation.inverse();  // reverse from object->scene to scene->object
     Eigen::Vector3f t(transformation.block<3,1>(0,3));
     Eigen::Quaternionf q(transformation.block<3,3>(0,0));
     // create transform TF
@@ -162,7 +170,7 @@ int main(int argc, char** argv)
 
     // setup sub
     ros::Subscriber sub = nh.subscribe("detected_cloud", 1, register_object_cb);
-    
+
     ros::spin();
 
     return (0);
