@@ -49,15 +49,15 @@ void register_object_cb(object_detection::Detection3D detection)
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
     // load object
-    //pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/obj_models/hp_mouse_scaled.obj", *object);
-    pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
+    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/hp_mouse.obj", *object);
+    // pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
-    grid.setLeafSize(0.002, 0.002, 0.002);
+    grid.setLeafSize(0.005, 0.005, 0.005);
     grid.setInputCloud(object);
     grid.filter(*object);
-    grid.setLeafSize(0.002, 0.002, 0.002);
+    grid.setLeafSize(0.005, 0.005, 0.005);
     grid.setInputCloud(scene);
     grid.filter(*scene);
 
@@ -89,16 +89,16 @@ void register_object_cb(object_detection::Detection3D detection)
     // Estimate normals for object and scene
     ROS_INFO("Estimating Normals");
     pcl::NormalEstimationOMP<PointNT, PointNT> nest;
-    nest.setRadiusSearch(0.01);
-    // nest.setInputCloud(object);
-    // nest.compute(*object);
+    nest.setRadiusSearch(0.015);
+    nest.setInputCloud(object);
+    nest.compute(*object);
     nest.setInputCloud(scene);
     nest.compute(*scene);
 
     // Estimate features
     ROS_INFO("Estimating Features Object");
     FeatureEstimationT fest;
-    fest.setRadiusSearch(0.025);
+    fest.setRadiusSearch(0.015);
     fest.setInputCloud(object);
     fest.setInputNormals(object);
     fest.compute(*object_features);
@@ -114,12 +114,12 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(75000);               // Number of RANSAC iterations (50000)
+    align.setMaximumIterations(250000);               // Number of RANSAC iterations (50000)
     align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose (3)
     align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
-    align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold (0.9)
-    align.setMaxCorrespondenceDistance(2.5f * 0.002); // Inlier threshold (2.5 * leaf size)
-    // align.setInlierFraction(0.01f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
+    align.setSimilarityThreshold(0.8f);              // Polygonal edge length similarity threshold (0.9)
+    align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf size)
+    align.setInlierFraction(0.25f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
 
     while (true)
     {
