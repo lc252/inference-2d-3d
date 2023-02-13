@@ -119,16 +119,15 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
     align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold (0.9)
     align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf size)
-    align.setInlierFraction(0.25f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
+    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
 
-    while (true)
+    ROS_INFO("Attempting to register the model...");
+    align.align(*object_aligned);
+
+    if (!align.hasConverged())
     {
-        align.align(*object_aligned);
-        if (align.hasConverged())
-        {
-            break; 
-        }
-        ROS_WARN("Could not accurately register the model...");
+        ROS_WARN("Could not accurately register the model");
+        return;
     }
 
     // get the transform Eigen
