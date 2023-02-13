@@ -89,7 +89,7 @@ void register_object_cb(object_detection::Detection3D detection)
     // Estimate normals for object and scene
     ROS_INFO("Estimating Normals");
     pcl::NormalEstimationOMP<PointNT, PointNT> nest;
-    nest.setRadiusSearch(0.015);
+    nest.setRadiusSearch(0.01);
     nest.setInputCloud(object);
     nest.compute(*object);
     nest.setInputCloud(scene);
@@ -98,7 +98,7 @@ void register_object_cb(object_detection::Detection3D detection)
     // Estimate features
     ROS_INFO("Estimating Features Object");
     FeatureEstimationT fest;
-    fest.setRadiusSearch(0.015);
+    fest.setRadiusSearch(0.025);
     fest.setInputCloud(object);
     fest.setInputNormals(object);
     fest.compute(*object_features);
@@ -114,20 +114,20 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(250000);               // Number of RANSAC iterations (50000)
-    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose (3)
-    align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
-    align.setSimilarityThreshold(0.8f);              // Polygonal edge length similarity threshold (0.9)
+    align.setMaximumIterations(100000);               // Number of RANSAC iterations, increase to tradeoff speed for accuracy (50000)
+    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose, increase to tradeoff speed for accuracy (3)
+    align.setCorrespondenceRandomness(5);            // Number of nearest features to use, increase to tradeoff speed for accuracy (5)
+    align.setSimilarityThreshold(0.8f);              // Polygonal edge length similarity threshold, decrease to tradeoff speed for accuracy (0.9)
     align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf size)
-    align.setInlierFraction(0.25f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
+    align.setInlierFraction(0.5f);                  // Required inlier fraction for accepting a pose hypothesis, increase  (0.25)
 
-    while (true)
+    ROS_INFO("Attempting to register the model...");
+    align.align(*object_aligned);
+
+    if (!align.hasConverged())
     {
-        align.align(*object_aligned);
-        if (!align.hasConverged())
-        {
-            ROS_WARN("Could not accurately register the model...");
-        }
+        ROS_WARN("Could not accurately register the model");
+        return;
     }
 
     // get the transform Eigen
