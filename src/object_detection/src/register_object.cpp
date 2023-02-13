@@ -57,7 +57,7 @@ void register_object_cb(object_detection::Detection3D detection)
     grid.setLeafSize(0.005, 0.005, 0.005);
     grid.setInputCloud(object);
     grid.filter(*object);
-    grid.setLeafSize(0.002, 0.002, 0.002);
+    grid.setLeafSize(0.005, 0.005, 0.005);
     grid.setInputCloud(scene);
     grid.filter(*scene);
 
@@ -114,12 +114,12 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(75000);               // Number of RANSAC iterations (50000)
-    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose (3)
-    align.setCorrespondenceRandomness(5);            // Number of nearest features to use (5)
-    align.setSimilarityThreshold(0.95f);              // Polygonal edge length similarity threshold (0.9)
+    align.setMaximumIterations(100000);               // Number of RANSAC iterations, increase to tradeoff speed for accuracy (50000)
+    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose, increase to tradeoff speed for accuracy (3)
+    align.setCorrespondenceRandomness(5);            // Number of nearest features to use, increase to tradeoff speed for accuracy (5)
+    align.setSimilarityThreshold(0.8f);              // Polygonal edge length similarity threshold, decrease to tradeoff speed for accuracy (0.9)
     align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf size)
-    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis (0.25)
+    align.setInlierFraction(0.5f);                  // Required inlier fraction for accepting a pose hypothesis, increase  (0.25)
 
     ROS_INFO("Attempting to register the model...");
     align.align(*object_aligned);
