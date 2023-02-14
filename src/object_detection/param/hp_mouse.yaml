@@ -1,5 +1,5 @@
 {
-  "voxel_size": 0.005,
+  "leaf_size": 0.005,
   "segment_plane": True,
   "align_MaximumIterations": 100000,
   "align_NumberOfSamples": 3,
