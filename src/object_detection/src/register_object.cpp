@@ -34,10 +34,32 @@ typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 // Publishers
 ros::Publisher object_aligned_pub;
 
+float leaf_size;
+bool segment_plane;
+int MaximumIterations;
+int NumberOfSamples;
+int CorrespondenceRandomness;
+float SimilarityThreshold;
+float MaxCorrespondenceDistance;
+float InlierFraction;
 
+void get_parameters()
+{
+    ros::param::get("leaf_size", leaf_size);
+    ros::param::get("segment_plane", segment_plane);
+    ros::param::get("align_MaximumIterations", MaximumIterations);
+    ros::param::get("align_NumberOfSamples", NumberOfSamples);
+    ros::param::get("align_CorrespondenceRandomness", CorrespondenceRandomness);
+    ros::param::get("align_SimilarityThreshold", SimilarityThreshold);    
+    ros::param::get("align_MaxCorrespondenceDistance", MaxCorrespondenceDistance);    
+    ros::param::get("align_InlierFraction", InlierFraction);
+}
 
 void register_object_cb(object_detection::Detection3D detection)
 {
+    // Get Latest Parameters
+    get_parameters();
+
     // Point clouds
     PointCloudT::Ptr object(new PointCloudT);
     PointCloudT::Ptr object_aligned(new PointCloudT);
