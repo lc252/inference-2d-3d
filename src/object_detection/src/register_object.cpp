@@ -49,15 +49,15 @@ void register_object_cb(object_detection::Detection3D detection)
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
     // load object
-    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/hp_mouse.obj", *object);
-    // pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
+    // pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled.obj", *object);
+    pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
 
     // Downsample
     pcl::VoxelGrid<PointNT> grid;
     grid.setLeafSize(0.005, 0.005, 0.005);
     grid.setInputCloud(object);
     grid.filter(*object);
-    grid.setLeafSize(0.005, 0.005, 0.005);
+    grid.setLeafSize(0.002, 0.002, 0.002);
     grid.setInputCloud(scene);
     grid.filter(*scene);
 
@@ -114,14 +114,12 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(100000);               // Number of RANSAC iterations, increase to tradeoff speed for accuracy (50000)
+    align.setMaximumIterations(300000);               // Number of RANSAC iterations, increase to tradeoff speed for accuracy (50000)
     align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose, increase to tradeoff speed for accuracy (3)
     align.setCorrespondenceRandomness(5);            // Number of nearest features to use, increase to tradeoff speed for accuracy (5)
-    align.setSimilarityThreshold(0.8f);              // Polygonal edge length similarity threshold, decrease to tradeoff speed for accuracy (0.9)
+    align.setSimilarityThreshold(0.5f);              // Polygonal edge length similarity threshold, decrease to tradeoff speed for accuracy (0.9)
     align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf size)
-    align.setInlierFraction(0.5f);                  // Required inlier fraction for accepting a pose hypothesis, increase  (0.25)
-
-    ROS_INFO("Attempting to register the model...");
+    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis, increase  (0.25)
     align.align(*object_aligned);
 
     if (!align.hasConverged())
