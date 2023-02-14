@@ -1,0 +1,10 @@
+{
+  "voxel_size": 0.005,
+  "segment_plane": True,
+  "align_MaximumIterations": 100000,
+  "align_NumberOfSamples": 3,
+  "align_CorrespondenceRandomness": 5,
+  "align_SimilarityThreshold": 0.8,
+  "align_MaxCorrespondenceDistance": 0.0125,
+  "align_InlierFraction": 0.5      
+}
