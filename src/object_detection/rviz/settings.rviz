@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Status1
       Splitter Ratio: 0.5
     Tree Height: 435
   - Class: rviz/Selection
@@ -175,6 +174,47 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 10000
+      Frames:
+        All Enabled: false
+        aligned_object:
+          Value: true
+        camera_aligned_depth_to_color_frame:
+          Value: false
+        camera_color_frame:
+          Value: false
+        camera_color_optical_frame:
+          Value: false
+        camera_depth_frame:
+          Value: false
+        camera_depth_optical_frame:
+          Value: false
+        camera_link:
+          Value: true
+        map:
+          Value: false
+      Marker Alpha: 1
+      Marker Scale: 0.5
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          camera_link:
+            camera_aligned_depth_to_color_frame:
+              camera_color_optical_frame:
+                aligned_object:
+                  {}
+            camera_color_frame:
+              {}
+            camera_depth_frame:
+              camera_depth_optical_frame:
+                {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -203,7 +243,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.5107265710830688
+      Distance: 1.24571692943573
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -219,9 +259,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6553981900215149
+      Pitch: 0.5503983497619629
       Target Frame: <Fixed Frame>
-      Yaw: 0.9753981232643127
+      Yaw: 2.2103989124298096
     Saved: ~
 Window Geometry:
   Displays:
@@ -242,4 +282,4 @@ Window Geometry:
     collapsed: false
   Width: 1200
   X: 362
-  Y: 32
+  Y: 27

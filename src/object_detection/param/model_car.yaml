@@ -1,5 +1,5 @@
 {
-  "leaf_size": 0.005,
+  "leaf_size": 0.01,
   "segment_plane": True,
   "normal_SearchRadius": 0.01,
   "features_SearchRadius": 0.025,
