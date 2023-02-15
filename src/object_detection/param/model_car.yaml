@@ -1,0 +1,15 @@
+{
+  "leaf_size": 0.01,
+  "segment_plane": True,
+  "normal_SearchRadius": 0.01,
+  "features_SearchRadius": 0.025,
+
+  "align": {
+    "MaximumIterations": 300000,
+    "NumberOfSamples": 3,
+    "CorrespondenceRandomness": 5,
+    "SimilarityThreshold": 0.5,
+    "MaxCorrespondenceDistance": 0.0125,
+    "InlierFraction": 0.7
+  }    
+}

@@ -22,11 +22,13 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <object_detection/Detection3D.h>
 #include <tf/transform_broadcaster.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 
 // Types
 typedef pcl::PointNormal PointNT;
 typedef pcl::PointCloud<PointNT> PointCloudT;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloudXYZ;
 typedef pcl::FPFHSignature33 FeatureT;
 typedef pcl::FPFHEstimationOMP<PointNT, PointNT, FeatureT> FeatureEstimationT;
 typedef pcl::PointCloud<FeatureT> FeatureCloudT;
@@ -34,6 +36,72 @@ typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 // Publishers
 ros::Publisher object_aligned_pub;
 
+
+void downsample(PointCloudT::Ptr &cloud)
+{
+    float leaf_size;
+    ros::param::get("leaf_size", leaf_size);
+    pcl::VoxelGrid<PointNT> grid;
+    grid.setLeafSize(leaf_size, leaf_size, leaf_size);
+    grid.setInputCloud(cloud);
+    grid.filter(*cloud);
+}
+
+void remove_plane(PointCloudT::Ptr &cloud)
+{
+    bool segment_plane;
+    ros::param::get("segment_plane", segment_plane);
+    if (!segment_plane)
+    {
+        return;
+    }
+
+    ROS_INFO("Segmenting");
+    pcl::SACSegmentation<PointNT> seg;
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
+    seg.setOptimizeCoefficients(false);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(100);
+    seg.setDistanceThreshold(0.0025);   // tested previously
+    seg.setInputCloud(cloud);
+    seg.segment(*inliers, *coeffs);
+    if (inliers->indices.size() != 0)
+    {
+        pcl::ExtractIndices<PointNT> extractor;
+        extractor.setInputCloud(cloud);
+        extractor.setIndices(inliers);
+        extractor.setNegative(true);        // keep NON planar
+        extractor.filter(*cloud);
+    }
+    else
+    {
+        ROS_WARN("No plane found, no segmentation...");
+    }
+    return;
+}
+
+void est_normals(PointCloudT::Ptr &cloud)
+{
+    float sr;
+    ros::param::get("normal_SearchRadius", sr);
+    pcl::NormalEstimationOMP<PointNT, PointNT> nest;
+    nest.setRadiusSearch(0.01);
+    nest.setInputCloud(cloud);
+    nest.compute(*cloud);
+}
+
+void est_features(PointCloudT::Ptr &cloud, FeatureCloudT::Ptr &features)
+{
+    float sr;
+    ros::param::get("features_SearchRadius", sr);
+    FeatureEstimationT fest;
+    fest.setRadiusSearch(0.025);
+    fest.setInputCloud(cloud);
+    fest.setInputNormals(cloud);
+    fest.compute(*features);
+}
 
 
 void register_object_cb(object_detection::Detection3D detection)
@@ -49,64 +117,39 @@ void register_object_cb(object_detection::Detection3D detection)
     // load scene
     pcl::fromROSMsg(detection.cloud, *scene);
     // load object
-    // pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled.obj", *object);
+    // pcl::io::loadOBJFile<PointNT>("PATH/TO/.obj", *object);
     pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
 
+    ROS_INFO("Downsampling Clouds");
     // Downsample
-    pcl::VoxelGrid<PointNT> grid;
-    grid.setLeafSize(0.005, 0.005, 0.005);
-    grid.setInputCloud(object);
-    grid.filter(*object);
-    grid.setLeafSize(0.002, 0.002, 0.002);
-    grid.setInputCloud(scene);
-    grid.filter(*scene);
+    downsample(scene);
+    downsample(object);
 
-    // Segment and remove largest plane
-    ROS_INFO("Segmenting");
-    pcl::SACSegmentation<PointNT> seg;
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-    pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
-    seg.setOptimizeCoefficients(false);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(100);
-    seg.setDistanceThreshold(0.0025);   // tested previously
-    seg.setInputCloud(scene);
-    seg.segment(*inliers, *coeffs);
-    if (inliers->indices.size() != 0)
-    {
-        pcl::ExtractIndices<PointNT> extractor;
-        extractor.setInputCloud(scene);
-        extractor.setIndices(inliers);
-        extractor.setNegative(true);        // keep NON planar
-        extractor.filter(*scene);
-    }
-    else
-    {
-        ROS_WARN("No plane found, no segmentation...");
-    }
+    ROS_INFO("Removing Plane");
+    // segment and remove floor plane
+    remove_plane(scene);
 
     // Estimate normals for object and scene
     ROS_INFO("Estimating Normals");
-    pcl::NormalEstimationOMP<PointNT, PointNT> nest;
-    nest.setRadiusSearch(0.01);
-    nest.setInputCloud(object);
-    nest.compute(*object);
-    nest.setInputCloud(scene);
-    nest.compute(*scene);
+    est_normals(scene);
+    est_normals(object);
 
     // Estimate features
     ROS_INFO("Estimating Features Object");
-    FeatureEstimationT fest;
-    fest.setRadiusSearch(0.025);
-    fest.setInputCloud(object);
-    fest.setInputNormals(object);
-    fest.compute(*object_features);
+    est_features(object, object_features);
     ROS_INFO("Estimating Features Scene");
-    fest.setInputCloud(scene);
-    fest.setInputNormals(scene);
-    fest.compute(*scene_features);
-
+    est_features(scene, scene_features);
+    
+    // Get align parameters from ros
+    int MaximumIterations, NumberOfSamples,CorrespondenceRandomness;
+    float SimilarityThreshold, MaxCorrespondenceDistance, InlierFraction;
+    ros::param::get("align/MaximumIterations", MaximumIterations);
+    ros::param::get("align/NumberOfSamples", NumberOfSamples);
+    ros::param::get("align/CorrespondenceRandomness", CorrespondenceRandomness);
+    ros::param::get("align/SimilarityThreshold", SimilarityThreshold);    
+    ros::param::get("align/MaxCorrespondenceDistance", MaxCorrespondenceDistance);    
+    ros::param::get("align/InlierFraction", InlierFraction);
+        
     // Perform alignment
     ROS_INFO("Aligning");
     pcl::SampleConsensusPrerejective<PointNT, PointNT, FeatureT> align;
@@ -114,12 +157,12 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setSourceFeatures(object_features);
     align.setInputTarget(scene);
     align.setTargetFeatures(scene_features);
-    align.setMaximumIterations(300000);               // Number of RANSAC iterations, increase to tradeoff speed for accuracy (50000)
-    align.setNumberOfSamples(3);                     // Number of points to sample for generating/prerejecting a pose, increase to tradeoff speed for accuracy (3)
-    align.setCorrespondenceRandomness(5);            // Number of nearest features to use, increase to tradeoff speed for accuracy (5)
-    align.setSimilarityThreshold(0.5f);              // Polygonal edge length similarity threshold, decrease to tradeoff speed for accuracy (0.9)
-    align.setMaxCorrespondenceDistance(2.5f * 0.005); // Inlier threshold (2.5 * leaf size)
-    align.setInlierFraction(0.7f);                  // Required inlier fraction for accepting a pose hypothesis, increase  (0.25)
+    align.setMaximumIterations(MaximumIterations);               // Number of RANSAC iterations, increase to tradeoff speed for accuracy (50000)
+    align.setNumberOfSamples(NumberOfSamples);                     // Number of points to sample for generating/prerejecting a pose, increase to tradeoff speed for accuracy (3)
+    align.setCorrespondenceRandomness(CorrespondenceRandomness);            // Number of nearest features to use, increase to tradeoff speed for accuracy (5)
+    align.setSimilarityThreshold(SimilarityThreshold);              // Polygonal edge length similarity threshold, decrease to tradeoff speed for accuracy (0.9)
+    align.setMaxCorrespondenceDistance(MaxCorrespondenceDistance); // Inlier threshold (2.5 * leaf size)
+    align.setInlierFraction(InlierFraction);                  // Required inlier fraction for accepting a pose hypothesis, increase  (0.25)
     align.align(*object_aligned);
 
     if (!align.hasConverged())
@@ -129,27 +172,22 @@ void register_object_cb(object_detection::Detection3D detection)
     }
 
     // get the transform Eigen
-    Eigen::Matrix4f transformation = align.getFinalTransformation();
-    transformation = transformation.inverse();  // reverse from object->scene to scene->object
-    Eigen::Vector3f t(transformation.block<3,1>(0,3));
-    Eigen::Quaternionf q(transformation.block<3,3>(0,0));
+    Eigen::Matrix4f tf_mat = align.getFinalTransformation();
+    // tf_mat = tf_mat.inverse();  // reverse from object->scene to scene->object
+    Eigen::Affine3d tf_affine;
+    tf_affine.matrix() = tf_mat.cast<double>();
+
     // create transform TF
     geometry_msgs::TransformStamped object_alignment_tf;
+    object_alignment_tf = tf2::eigenToTransform(tf_affine);
     object_alignment_tf.header.stamp = ros::Time::now();
     object_alignment_tf.header.frame_id = "camera_color_optical_frame";
     object_alignment_tf.child_frame_id = "aligned_object";
-    object_alignment_tf.transform.translation.x = t.x();
-    object_alignment_tf.transform.translation.y = t.y();
-    object_alignment_tf.transform.translation.z = t.z();
-    object_alignment_tf.transform.rotation.x = q.x();
-    object_alignment_tf.transform.rotation.y = q.y();
-    object_alignment_tf.transform.rotation.z = q.z();
-    object_alignment_tf.transform.rotation.w = q.w();
     // broadcast
     static tf::TransformBroadcaster br;
     br.sendTransform(object_alignment_tf);
 
-    // Create ros msg clouds
+    // Create ros msg cloud
     sensor_msgs::PointCloud2 ros_object_aligned;
     pcl::toROSMsg(*object_aligned, ros_object_aligned);
     ros_object_aligned.header.frame_id = "camera_color_optical_frame";
