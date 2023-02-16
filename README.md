@@ -2,5 +2,6 @@
 
 Detect objects using 2D images and obtains the corresponding 3D point cloud
 
-OpenGR: https://github.com/STORM-IRIT/OpenGR.git
-\nSet OpenGR_DIR=/PATH/TO/OpenGR/build/install/lib/cmake/opengr in build/CMakeCache.txt
+OpenGR: https://github.com/STORM-IRIT/OpenGR.git 
+
+Set OpenGR_DIR=/PATH/TO/OpenGR/build/install/lib/cmake/opengr in build/CMakeCache.txt
