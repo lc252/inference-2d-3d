@@ -90,12 +90,6 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setDelta(delta);
     align.setSampleSize(samples);
     align.align(*object_aligned);
-    float score = 0;
-    while (score < 0.8)
-    {
-        align.align(*object_aligned);
-        score = align.getFitnessScore();
-    }
 
     // get the transform matrix Eigen
     Eigen::Matrix4f tf_mat = align.getFinalTransformation();
