@@ -20,6 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
 )
 
+find_package(OpenGR REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -146,6 +148,7 @@ include_directories(
 add_executable(cloud_roi_segment src/cloud_roi_segment.cpp)
 add_executable(register_object src/register_object.cpp)
 add_executable(preprocess_model src/preprocess_model.cpp)
+add_executable(super_registration src/super_registration.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -161,6 +164,7 @@ add_executable(preprocess_model src/preprocess_model.cpp)
 target_link_libraries(cloud_roi_segment ${catkin_LIBRARIES})
 target_link_libraries(register_object ${catkin_LIBRARIES})
 target_link_libraries(preprocess_model ${catkin_LIBRARIES})
+target_link_libraries(super_registration ${catkin_LIBRARIES} gr::algo)
 
 #############
 ## Install ##

@@ -1,0 +1,7 @@
+{
+  "leaf_size": 0.003,               # Downsampling cubic voxel size
+  "normal_SearchRadius": 0.01,      # Neighbor radius for normal estimation
+  "overlap": 0.6,                  # Expected overlapping point fraction
+  "delta": 0.005,                   # Point error after transformation estimation
+  "samples": 200                    # number of samples for alignment, Super4PCS has linear time complexity wrt samples - documentation suggests 200 is generally sufficient
+}
