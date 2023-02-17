@@ -1,8 +1,7 @@
 {
   "leaf_size": 0.005,               # Downsampling cubic voxel size
-  "segment_plane": True,            # Can reduce set size when objects are on a flat surface
   "normal_SearchRadius": 0.01,      # Neighbor radius for normal estimation
-  "overlap": 0.9,                  # Expected overlapping point fraction
-  "delta": 0.005,                   # Point error after transformation estimation
-  "samples": 2000                    # number of samples for alignment, Super4PCS has linear time complexity wrt samples - documentation suggests 200 is generally sufficient
+  "overlap": 0.6,                  # Expected overlapping point fraction
+  "delta": 0.01,                   # Point error after transformation estimation
+  "samples": 200                    # number of samples for alignment, Super4PCS has linear time complexity wrt samples - documentation suggests 200 is generally sufficient
 }
