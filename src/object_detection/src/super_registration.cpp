@@ -64,8 +64,8 @@ void register_object_cb(object_detection::Detection3D detection)
     // load clouds
     ROS_INFO("Loading Clouds");
     pcl::fromROSMsg(detection.cloud, *scene);
-    // pcl::io::loadOBJFile<PointNT>("PATH/TO/.obj", *object);
-    pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
+    pcl::io::loadOBJFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled.obj", *object);
+    // pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
 
     // Downsample
     ROS_INFO("Downsampling Clouds");
@@ -90,6 +90,12 @@ void register_object_cb(object_detection::Detection3D detection)
     align.setDelta(delta);
     align.setSampleSize(samples);
     align.align(*object_aligned);
+    float score = 0;
+    while (score < 0.8)
+    {
+        align.align(*object_aligned);
+        score = align.getFitnessScore();
+    }
 
     // get the transform matrix Eigen
     Eigen::Matrix4f tf_mat = align.getFinalTransformation();
