@@ -100,11 +100,6 @@ int main(int argc, char **argv)
             visual_tools.trigger();
             planning_components->execute(); // Execute the plan
         }
-        else
-        {
-            ROS_ERROR("Did not work");
-            break;
-        }
     }
 
     // visual_tools.deleteAllMarkers();
