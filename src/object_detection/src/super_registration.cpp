@@ -46,34 +46,6 @@ void downsample(PointCloudT::Ptr &cloud)
     grid.filter(*cloud);
 }
 
-void remove_plane(PointCloudT::Ptr &cloud)
-{
-    ROS_INFO("Segmenting");
-    pcl::SACSegmentation<PointNT> seg;
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-    pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
-    seg.setOptimizeCoefficients(false);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(100);
-    seg.setDistanceThreshold(0.0025);   // tested previously
-    seg.setInputCloud(cloud);
-    seg.segment(*inliers, *coeffs);
-    if (inliers->indices.size() != 0)
-    {
-        pcl::ExtractIndices<PointNT> extractor;
-        extractor.setInputCloud(cloud);
-        extractor.setIndices(inliers);
-        extractor.setNegative(true);        // keep NON planar
-        extractor.filter(*cloud);
-    }
-    else
-    {
-        ROS_WARN("No plane found, no segmentation...");
-    }
-    return;
-}
-
 void est_normals(PointCloudT::Ptr &cloud)
 {
     float sr;
@@ -82,6 +54,15 @@ void est_normals(PointCloudT::Ptr &cloud)
     nest.setRadiusSearch(0.01);
     nest.setInputCloud(cloud);
     nest.compute(*cloud);
+}
+
+void publish_cloud(PointCloudT::Ptr &cloud)
+{
+    sensor_msgs::PointCloud2 ros_cloud;
+    pcl::toROSMsg(*cloud, ros_cloud);
+    ros_cloud.header.frame_id = "camera_color_optical_frame";
+    // Publish clouds
+    object_aligned_pub.publish(ros_cloud);
 }
 
 void register_object_cb(object_detection::Detection3D detection)
@@ -96,10 +77,6 @@ void register_object_cb(object_detection::Detection3D detection)
     ROS_INFO("Loading Clouds");
     pcl::fromROSMsg(detection.cloud, *scene);
     pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
-
-    // Filter Plane
-    ROS_INFO("Removing Plane");
-    remove_plane(scene);
 
     // Downsample
     ROS_INFO("Downsampling Clouds");
@@ -136,17 +113,13 @@ void register_object_cb(object_detection::Detection3D detection)
     object_alignment_tf = tf2::eigenToTransform(transformation);
     object_alignment_tf.header.stamp = ros::Time::now();
     object_alignment_tf.header.frame_id = "camera_color_optical_frame";
-    object_alignment_tf.child_frame_id = "aligned_object";
+    object_alignment_tf.child_frame_id = "object";
     // broadcast
     static tf::TransformBroadcaster br;
     br.sendTransform(object_alignment_tf);
 
-    // Create ros msg cloud
-    sensor_msgs::PointCloud2 ros_object_aligned;
-    pcl::toROSMsg(*object_aligned, ros_object_aligned);
-    ros_object_aligned.header.frame_id = "camera_color_optical_frame";
-    // Publish clouds
-    object_aligned_pub.publish(ros_object_aligned);
+    // Publish ros msg cloud
+    publish_cloud(object_aligned);
 }
 
 
