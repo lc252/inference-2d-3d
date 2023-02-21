@@ -1,6 +1,6 @@
 <launch>
 
-  <include ns="obj" file="$(find object_detection)/launch/object_detection.launch">
+  <include file="$(find object_detection)/launch/object_detection.launch">
     <arg name="rviz" value="false"/> 
   </include>
 

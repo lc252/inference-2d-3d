@@ -1,6 +1,6 @@
 <launch>
 
-  <include ns="tp" file="$(find moveit_cpp)/launch/target_planner.launch">
+  <include file="$(find moveit_cpp)/launch/target_planner.launch">
     <arg name="rviz" value="false"/> 
   </include>
 

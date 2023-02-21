@@ -35,6 +35,6 @@
       <rosparam command="load" file="$(find abb_irb1200_7_70_moveit_config)/config/kinematics.yaml"/>
     </node>
 
-    <node pkg="moveit_cpp" type="target_planner" name="target_planner" output="screen"/>
+    <node pkg="moveit_cpp" type="target_planner" name="target_planner" output="screen" required="true"/>
 
 </launch>
