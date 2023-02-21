@@ -179,8 +179,6 @@ Visualization Manager:
       Frame Timeout: 10000
       Frames:
         All Enabled: false
-        aligned_object:
-          Value: true
         camera_aligned_depth_to_color_frame:
           Value: false
         camera_color_frame:
@@ -193,8 +191,8 @@ Visualization Manager:
           Value: false
         camera_link:
           Value: true
-        map:
-          Value: false
+        world:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 0.5
       Name: TF
@@ -202,12 +200,11 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        map:
+        world:
           camera_link:
             camera_aligned_depth_to_color_frame:
               camera_color_optical_frame:
-                aligned_object:
-                  {}
+                {}
             camera_color_frame:
               {}
             camera_depth_frame:
@@ -219,7 +216,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -243,7 +240,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.24571692943573
+      Distance: 1.7501425743103027
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -259,9 +256,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5503983497619629
+      Pitch: 0.45039841532707214
       Target Frame: <Fixed Frame>
-      Yaw: 2.2103989124298096
+      Yaw: 2.575399875640869
     Saved: ~
 Window Geometry:
   Displays:
