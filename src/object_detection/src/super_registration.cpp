@@ -14,6 +14,9 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/features/normal_3d_omp.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
 // PCL Super4PCS wrapper
 #include <pcl/registration/super4pcs.h>
 // PCL import geometry
@@ -43,6 +46,34 @@ void downsample(PointCloudT::Ptr &cloud)
     grid.filter(*cloud);
 }
 
+void remove_plane(PointCloudT::Ptr &cloud)
+{
+    ROS_INFO("Segmenting");
+    pcl::SACSegmentation<PointNT> seg;
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
+    seg.setOptimizeCoefficients(false);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(100);
+    seg.setDistanceThreshold(0.0025);   // tested previously
+    seg.setInputCloud(cloud);
+    seg.segment(*inliers, *coeffs);
+    if (inliers->indices.size() != 0)
+    {
+        pcl::ExtractIndices<PointNT> extractor;
+        extractor.setInputCloud(cloud);
+        extractor.setIndices(inliers);
+        extractor.setNegative(true);        // keep NON planar
+        extractor.filter(*cloud);
+    }
+    else
+    {
+        ROS_WARN("No plane found, no segmentation...");
+    }
+    return;
+}
+
 void est_normals(PointCloudT::Ptr &cloud)
 {
     float sr;
@@ -65,6 +96,10 @@ void register_object_cb(object_detection::Detection3D detection)
     ROS_INFO("Loading Clouds");
     pcl::fromROSMsg(detection.cloud, *scene);
     pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
+
+    // Filter Plane
+    ROS_INFO("Removing Plane");
+    remove_plane(scene);
 
     // Downsample
     ROS_INFO("Downsampling Clouds");
