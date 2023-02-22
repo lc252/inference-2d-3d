@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find support)/rviz/settings.rviz">
+        <rosparam command="load" file="$(find abb_irb1200_7_70_moveit_config)/config/kinematics.yaml"/>
+    </node>
+
+</launch>

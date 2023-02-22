@@ -33,6 +33,11 @@ void roi_segment_cb(object_detection::Detection2DArray det_arr)
         }
     }
 
+    if (best_det.confidence == 0)
+    {
+        return;
+    }
+
     // iterate the points in the region of interest and add them to the output cloud
     for (int i=best_det.roi.y_offset; i<(best_det.roi.y_offset+best_det.roi.height); i++)
     {

@@ -1,5 +1,7 @@
 <launch>
 
+    <arg name="rviz" default="true"/>
+
     <!-- Detection -->
     <node pkg="object_detection" type="yolo_inference_node.py" name="yolo_inference_node" output="screen"/>
 
@@ -18,9 +20,9 @@
     <include file="$(find object_detection)/launch/organised_pc.launch"/>
 
     <!-- Visualisation -->
-    <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find object_detection)/rviz/settings.rviz" required="true"/>
+    <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find object_detection)/rviz/settings.rviz" if="$(arg rviz)" required="true"/>
 
     <!-- Static Transform TESTING -->
-    <node pkg="tf" type="static_transform_publisher" name="maptocam" args="0 0 0 0 0 0 map camera_link 1"/>
+    <node pkg="tf" type="static_transform_publisher" name="maptocam" args="0 0 0.15 0 0.29147 0 world camera_link 1"/>
 
 </launch>

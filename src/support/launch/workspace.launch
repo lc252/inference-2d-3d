@@ -1,0 +1,15 @@
+<launch>
+
+    <include file="$(find object_detection)/launch/object_detection.launch">
+        <arg name="rviz" value="false"/> 
+    </include>
+
+    <include file="$(find moveit_cpp)/launch/target_planner.launch">
+        <arg name="rviz" value="false"/> 
+    </include>
+
+    <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find support)/rviz/settings.rviz">
+        <rosparam command="load" file="$(find abb_irb1200_7_70_moveit_config)/config/kinematics.yaml"/>
+    </node>
+
+</launch>

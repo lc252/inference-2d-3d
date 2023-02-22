@@ -14,6 +14,9 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/features/normal_3d_omp.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
 // PCL Super4PCS wrapper
 #include <pcl/registration/super4pcs.h>
 // PCL import geometry
@@ -53,6 +56,15 @@ void est_normals(PointCloudT::Ptr &cloud)
     nest.compute(*cloud);
 }
 
+void publish_cloud(PointCloudT::Ptr &cloud)
+{
+    sensor_msgs::PointCloud2 ros_cloud;
+    pcl::toROSMsg(*cloud, ros_cloud);
+    ros_cloud.header.frame_id = "camera_color_optical_frame";
+    // Publish clouds
+    object_aligned_pub.publish(ros_cloud);
+}
+
 void register_object_cb(object_detection::Detection3D detection)
 {
     // Point clouds
@@ -64,7 +76,7 @@ void register_object_cb(object_detection::Detection3D detection)
     // load clouds
     ROS_INFO("Loading Clouds");
     pcl::fromROSMsg(detection.cloud, *scene);
-    pcl::io::loadPCDFile<PointNT>("/home/fif/lc252/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
+    pcl::io::loadPCDFile<PointNT>("/home/lachl/inference-2d-3d/src/object_detection/model_geometry/model_car_scaled_normal.pcd", *object);
 
     // Downsample
     ROS_INFO("Downsampling Clouds");
@@ -101,17 +113,13 @@ void register_object_cb(object_detection::Detection3D detection)
     object_alignment_tf = tf2::eigenToTransform(transformation);
     object_alignment_tf.header.stamp = ros::Time::now();
     object_alignment_tf.header.frame_id = "camera_color_optical_frame";
-    object_alignment_tf.child_frame_id = "aligned_object";
+    object_alignment_tf.child_frame_id = "object";
     // broadcast
     static tf::TransformBroadcaster br;
     br.sendTransform(object_alignment_tf);
 
-    // Create ros msg cloud
-    sensor_msgs::PointCloud2 ros_object_aligned;
-    pcl::toROSMsg(*object_aligned, ros_object_aligned);
-    ros_object_aligned.header.frame_id = "camera_color_optical_frame";
-    // Publish clouds
-    object_aligned_pub.publish(ros_object_aligned);
+    // Publish ros msg cloud
+    publish_cloud(object_aligned);
 }
 
 

@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find object_detection)/launch/rosbag_object_detection.launch">
+    <arg name="rviz" value="false"/> 
+  </include>
+
+</launch>
