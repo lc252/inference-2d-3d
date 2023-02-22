@@ -12,7 +12,8 @@ from object_detection.msg import Detection2D, Detection2DArray
 class Detector:
     def __init__(self, render=False):
         # load inference model
-        self.model = torch.hub.load("ultralytics/yolov5", "custom", path=r"/home/fif/lc252/inference-2d-3d/src/object_detection/model_weights/model_car.pt")
+        ws_path = "//home//lachl"
+        self.model = torch.hub.load("ultralytics/yolov5", "custom", path=fr"{ws_path}//inference-2d-3d//src//object_detection//model_weights//model_car.pt")
         # image subscriber
         self.sub = rospy.Subscriber('camera/color/image_raw', Image, self.new_image_cb)
         self.img = np.zeros(shape=(480,640,3))
