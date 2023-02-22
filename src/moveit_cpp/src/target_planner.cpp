@@ -26,8 +26,8 @@ planning_interface::MotionPlanResponse plan_to_target(moveit_cpp::PlanningCompon
     target_pose.pose.orientation.z = transform.getRotation().z();
     target_pose.pose.orientation.w = transform.getRotation().w();
     target_pose.pose.position.x = transform.getOrigin().x();
-    target_pose.pose.position.x = transform.getOrigin().y();
-    target_pose.pose.position.x = transform.getOrigin().z();
+    target_pose.pose.position.y = transform.getOrigin().y();
+    target_pose.pose.position.z = transform.getOrigin().z();
     planning_components->setGoal(target_pose, "link_6");
 
     ROS_INFO("Target:\n\tT:\n\t\tx:%f\n\t\ty:%f\n\t\tz:%f\n\tR:\n\t\tx:%f\n\t\ty:%f\n\t\tz:%f\n\t\tw:%f", 
